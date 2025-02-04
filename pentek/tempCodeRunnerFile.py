@@ -1,0 +1,1 @@
+pyfiglet.FigletFont().getFonts()
