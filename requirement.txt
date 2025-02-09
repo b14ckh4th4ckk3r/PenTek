@@ -3,3 +3,4 @@ requests
 sys
 urllib
 pyfiglet
+socket
