@@ -12,7 +12,7 @@ def run(ip):
 
     delimeter.delimeter()
 
-    recon_core.dnsenum(ip)
+    recon_core.dnsenumeration(ip)
 
 
 

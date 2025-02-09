@@ -1,7 +1,11 @@
 import subprocess
 
 
-def dnsenum(domain):
+def dnsenumeration(domain):
 
-    dnsenum = subprocess.run(f'dnsenum {domain} q-type * q-class *',shell=True,text=True)
+
+    dig = subprocess.run(f'dig {domain} q-type * q-class *',shell=True,text=True)
+    print(dig.stdout)
+
+    dnsenum = subprocess.run(f'dnsenum {domain}',shell=True,text=True)
     print(dnsenum.stdout)
