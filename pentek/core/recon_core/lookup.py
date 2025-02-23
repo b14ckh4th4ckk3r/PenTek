@@ -1,19 +1,20 @@
 import requests
 import sys
 import subprocess
+import shlex
 
 
-def whois(domain) -> str:
+def whois(domain):
     '''
         This function look for basic whois information details 
     '''
 
-    whois_cmd  = subprocess.run(f'nslookup {domain}',capture_output=True, text=True, check=True,shell=True)
-    print(whois_cmd.stdout)
+    whois  = subprocess.run(shlex.split(f'whois -H {domain}'),capture_output=True, text=True, check=True)
+    yield whois.stdout
 
-def lookup_info(domain) -> str:
+def lookup_info(domain):
     '''
         This function look for basic information details like domain name, registry date using whois,dnslookup and other tool
     '''
-    nslookup = subprocess.run(f'nslookup {domain}',capture_output=True, text=True, check=True,shell=True)
-    print(nslookup.stdout)
+    nslookup = subprocess.run(shlex.split(f'nslookup {domain}'),capture_output=True, text=True, check=True)
+    yield nslookup.stdout

@@ -9,9 +9,7 @@ def main():
     text = "PenTek"
     banner = pyfiglet.figlet_format(text,font="pagga")
     print(banner)
-    recon.run("google.com")
-
-
+    recon.recon_run("testfire.net")
 
 
 

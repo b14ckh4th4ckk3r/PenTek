@@ -2,21 +2,31 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from core import recon_core
+from core.recon_core import lookup
+from core.recon_core import dns,osint
 from addons import delimeter
-def run(ip):
-    recon_core.whois(ip)
+def recon_run(domain):
+    for output in lookup.whois(domain):
+        print(output)
 
     delimeter.delimeter()
-    recon_core.lookup_info(ip)
+    print("Extracting Information from NS-Lookup")
+    delimeter.delimeter()
+    for output in lookup.lookup_info(domain):
+        print(output)
 
     delimeter.delimeter()
 
-    recon_core.dnsenumeration(ip)
+    # for line in dns.dnsenumeration(domain):
+    #     print(line)
+
+    delimeter.delimeter()
+
+    dns.subdomain(domain)
 
 
 
 
 if __name__ == '__main__':
-    ip = input("Enter IP address")
-    run(ip)
+    domain = input("Enter domain address")
+    recon_run(domain)
