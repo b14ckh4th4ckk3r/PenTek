@@ -9,7 +9,7 @@ def dnsenumeration(domain:str):
     
     yield dig.stdout
 
-    dnsenum = subprocess.Popen(shlex.split(f'dnsenum {domain} --threads 40'),stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+    dnsenum = subprocess.Popen(shlex.split(f'dnsenum {domain} --threads 20'),stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
 
     try:
         for line in iter(dnsenum.stdout.readline, ''):
@@ -27,5 +27,5 @@ def dnsenumeration(domain:str):
 def subdomain(domain):
     ''' This fucntion perform subdomain enumeration and aims to find maximum subdomain '''
     sublist3r = subprocess.run(shlex.split(f'sublist3r -t 10 -b -e google,yahoo,bing,baidu,ask -d {domain}'),text=True)
-    print(sublist3r.stdout)
+    return sublist3r
 

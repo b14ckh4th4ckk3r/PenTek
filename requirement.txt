@@ -4,3 +4,6 @@ sys
 urllib
 pyfiglet
 socket
+pymongo
+os
+subprocess
