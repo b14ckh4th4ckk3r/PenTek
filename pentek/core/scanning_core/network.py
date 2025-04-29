@@ -61,7 +61,7 @@ def run_nmap_vulnersScan(target,port,directory):
     command = f"nmap -sV -p {port} --script-timeout 90 --script vulners {target} -oN {directory}/{target}-vulners -oX {directory}/{target}-vulners.xml"
     nmap_proc = subprocess.Popen(shlex.split(command),stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
     try:
-        for line in iter(nmap_proc.stdout.readline,' '):
+        for line in iter(nmap_proc.stdout.readline,''):
             yield line.strip()
         
         nmap_proc.wait()
@@ -81,73 +81,63 @@ def run_ftp_scanning(domain,directory,mode):
     for result in run_intense_scan(domain,21,directory):
         if mode == "cli":
             print(result)
-        else:
-            pass
+    print()
         
-    print("====== Running detailed nmap scan for port 21 ======")
+    print("====== Running Vulnerability nmap scan for port 21 ======")
     for result in run_nmap_vulnersScan(domain,21,directory):
         if mode == "cli":
             print(result)
-            print()
-        else:   
-            pass
+
+    print()
 def run_ssh_scanning(domain,directory,mode):
     '''This Fucntion will scan for ssh vulnerablities'''
 
+    print("====== Running detailed nmap scan for port 22 ======")
     for result in run_intense_scan(domain,22,directory):
         if mode == "cli":
-            print("====== Running detailed nmap scan for port 22 ======")
             print(result)
-            print()
-
-        else:
-            pass
+    print()
 
 
 def run_telnet_scanning(domain,directory,mode):
     '''This Fucntion will scan for TELNET vulnerablities'''
 
+    print("====== Running detailed nmap scan for port 23 ======")
     for result in run_intense_scan(domain,23,directory):
         if mode == "cli":
-            print("====== Running detailed nmap scan for port 23 ======")
             print(result)
-            print()
-        else:
-            pass
+    print()
 
 def run_smtp_scanning(domain,directory,mode):
     '''This Fucntion will scan for SMTP vulnerablities'''
 
+    print("====== Running detailed nmap scan for port 25 ======")
     for result in run_intense_scan(domain,25,directory):
         if mode == "cli":
-            print("====== Running detailed nmap scan for port 25 ======")
             print(result)
-            print()
-        else:
-            pass
+    print()
+
 
 def run_dns_scanning(domain,directory,mode):
     '''This Fucntion will scan for DNS vulnerablities'''
 
+    print("====== Running detailed nmap scan for port 53 ======")
     for result in run_intense_scan(domain,53,directory):
         if mode == "cli":
-            print("====== Running detailed nmap scan for port 53 ======")
             print(result)
-            print()
-        else:
-            pass
+    print()
+
 
 
 def run_rdp_scanning(domain,directory,mode):
     '''This Fucntion will scan for RDP vulnerablities'''
 
+    print("====== Running detailed nmap scan for port 3389 ======")
     for result in run_intense_scan(domain,3389,directory):
         if mode == "cli":
-            print("====== Running detailed nmap scan for port 3389 ======")
             print(result)
-            print()
-        else:
-            pass
+    print()
+       
 
 
 

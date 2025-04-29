@@ -1,9 +1,8 @@
-import pymongo
 import uuid
 from datetime import datetime
 from pymongo import MongoClient
 
-# ✅ Global MongoDB Connection (Avoid Reconnecting)
+
 client = MongoClient("mongodb://localhost:27017/")
 db = client["pentesting_db"]
 metadata_collection = db["scans_metadata"]
@@ -74,3 +73,4 @@ class MongoDBHandler:
     def list_scans():
         """List all stored scans from metadata."""
         return list(metadata_collection.find({}, {"_id": 0}))
+    

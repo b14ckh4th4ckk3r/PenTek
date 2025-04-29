@@ -3,8 +3,6 @@ from pathlib import Path
 import socket
 import re
 from datetime import datetime
-
-
 from core.scanning_core import network
 from addons import delimeter
 from database.mongodb_handler import MongoDBHandler
@@ -40,15 +38,8 @@ def network_scanning(ip,mode,directory):
         }.get(port, None)
 
         if scan_function:
-            for result in scan_function(ip, directory, mode):
-                if mode == "cli":
-                    print(result)
-                else:
-                    # yield result
-                    pass
-                
-            if mode == "cli":
-                delimeter.delimeter()
+            scan_function(ip, directory, mode)
+            # delimeter.delimeter()
 
 
 

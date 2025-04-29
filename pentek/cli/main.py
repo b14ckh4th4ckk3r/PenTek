@@ -1,10 +1,8 @@
 import pyfiglet
 import argparse
-import sys,os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from phases.recon import Recon
-# from phases.scanning import scanning
+from phases import scanning
 from database.mongodb_handler import MongoDBHandler
 
 def initialize_database(domain) -> MongoDBHandler:
@@ -21,7 +19,7 @@ def main():
     domain = input("Enter the domain: ")
     db_handler = initialize_database(domain)
     Recon.recon_run(domain,db_handler,"cli")
-    # scanning.run_scanning(domain,db_handler,"cli")
+    scanning.run_scanning(domain,"cli")
     db_handler.update_scan_status("Completed")
 
 

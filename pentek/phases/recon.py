@@ -1,11 +1,8 @@
-import sys
-import os
 import socket
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-from core.recon_core import lookup
+from core.recon_core.lookup import LookUp
 from core.recon_core import dns,osint
 from addons import delimeter
+from colorama import Fore,Back,Style
 
 class Recon:
     def __init__(self,domain,ip):
@@ -17,16 +14,17 @@ class Recon:
         output = []
         db_handler.initialize_function(self.lookup_info.__name__,self.scan_type)
         db_handler.update_function_status(self.lookup_info.__name__,"running")
-        result = lookup.whois(self.domain)
+        result = LookUp.whois(self.domain)
         output.append(result)
         if mode == "cli":
+            print(f"{Fore.GREEN}Extracting Information from Whois{Style.RESET_ALL}")
             print(result)
             delimeter.delimeter()
 
-        result = lookup.ns_lookup_info(self.domain)
+        result = LookUp.ns_lookup_info(self.domain)
         output.append("Extracting Information from NS-Lookup\n")
         if mode == "cli":
-            print("Extracting Information from NS-Lookup")
+            print(f"{Fore.GREEN}Extracting Information from NS-Lookup\n{Style.RESET_ALL}")
             delimeter.delimeter()
             print(result)
             delimeter.delimeter()
