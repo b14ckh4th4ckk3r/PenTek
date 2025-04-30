@@ -1,68 +1,38 @@
 import socket
 from core.recon_core.lookup import LookUp
-from core.recon_core import dns,osint
-from addons import delimeter
+from core.recon_core.dns import DNS
+from core.recon_core.osint import OSINT
+
 from colorama import Fore,Back,Style
 
 class Recon:
-    def __init__(self,domain,ip):
+    def __init__(self,domain,ip,db_handler,mode="web"):
         self.domain = domain
         self.ip = ip
         self.scan_type = "recon"
+        self.db_handler = db_handler
+        self.mode = mode
 
-    def lookup_info(self,db_handler,mode):
-        output = []
-        db_handler.initialize_function(self.lookup_info.__name__,self.scan_type)
-        db_handler.update_function_status(self.lookup_info.__name__,"running")
-        result = LookUp.whois(self.domain)
-        output.append(result)
-        if mode == "cli":
-            print(f"{Fore.GREEN}Extracting Information from Whois{Style.RESET_ALL}")
-            print(result)
-            delimeter.delimeter()
+    def lookup_info(self):
+        LookUp.run_lookup(self)
 
-        result = LookUp.ns_lookup_info(self.domain)
-        output.append("Extracting Information from NS-Lookup\n")
-        if mode == "cli":
-            print(f"{Fore.GREEN}Extracting Information from NS-Lookup\n{Style.RESET_ALL}")
-            delimeter.delimeter()
-            print(result)
-            delimeter.delimeter()
-        output.append(result)
-        output = "".join(output)
-        db_handler.store_scan_result(self.lookup_info.__name__,output)
+    def dns_info(self):
+        DNS.run_dns(self)
 
-    def dns_info(self,db_handler,mode):
-        db_handler.initialize_function(self.dns_info.__name__,self.scan_type)
-        db_handler.update_function_status(self.dns_info.__name__,"running")
-        output =[]
-        temp_result = []
-        for line in dns.dnsenumeration(self.domain):
-            if mode == "cli":
-                print(line)
-            temp_result.append(line)
-        result = "".join(temp_result)
-        output.append(result)
-        if mode == "cli":
-            delimeter.delimeter()
-        # output.append("Searching for Subdomains\n")
-        # result = dns.subdomain(self.domain)
-        # if mode == "cli":
-        #     print(result)
-        #     delimeter.delimeter()
-        # output.append(result)
-        # output = "".join(output)
-        db_handler.store_scan_result(self.dns_info.__name__,output)
+    def osint(self):
+        OSINT.run_osint(self)
+        
+
 
 
 
     @staticmethod
     def recon_run(domain,db_handler,mode):
         ip = socket.gethostbyname(domain)
-        recon = Recon(domain,ip)
-        scan_type = "recon"
-        recon.lookup_info(db_handler,mode)
-        recon.dns_info(db_handler,mode)
+        recon = Recon(domain,ip,db_handler,mode)
+        recon.lookup_info()
+        recon.dns_info()
+        recon.osint()
 
 
 if __name__ == '__main__':

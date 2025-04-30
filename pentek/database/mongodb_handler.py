@@ -36,22 +36,23 @@ class MongoDBHandler:
             {"$set": {"status": status}}
         )
 
-    def initialize_function(self,name, scan_type):
+    def initialize_function(self,name, scan_type,module):
         """Initialize a function’s status inside the scan collection."""
         self.collection.insert_one({
             "name": name,
             "scan_type": scan_type,
-            "status": "",
+            "module":module,
+            "status": "running",
             "timestamp": datetime.now(),
             "output": []
         })
 
-    def update_function_status(self, name, status):
-        """Update the status of a specific function within the scan."""
-        self.collection.update_one(
-            {"name": name},
-            {"$set": {"status": status}}
-        )
+    # def update_function_status(self, name, status):
+    #     """Update the status of a specific function within the scan."""
+    #     self.collection.update_one(
+    #         {"name": name},
+    #         {"$set": {"status": status}}
+    #     )
 
     def store_scan_result(self, name, output):
         """Store scan results and mark as completed."""
