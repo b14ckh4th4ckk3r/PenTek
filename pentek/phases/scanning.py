@@ -2,66 +2,53 @@ import os
 from pathlib import Path
 import socket
 import re
+import ipaddress
 from datetime import datetime
-from core.scanning_core import network
+from core.scanning_core.network import NetworkScan
 from addons import delimeter
 from database.mongodb_handler import MongoDBHandler
 
+class Scanning:
+    def __init__(self,domain,ip,db_handler,mode="web"):
+        self.domain = domain
+        self.ip = ip
+        self.scan_type = "Scanning"
+        self.db_handler = db_handler
+        self.mode = mode
 
-def network_scanning(ip,mode,directory):
-
-    open_ports = []
-    port_pattern = re.compile(r"(\d+)/tcp\s+(open|filtered)")
-    try:
-        for result in network.run_initial_scan(ip,directory):
-            match = port_pattern.search(result)
-            if match:
-                # open_ports.append((match.group(1), match.group(2)))
-                open_ports.append(int(match.group(0).split("/")[0]))
-            if mode == 'cli':
-                print(result,flush=True)
-            
-    
-    except Exception as e:
-        print(e)
-    
-    delimeter.delimeter()
-
-    for port in open_ports:
-        scan_function = {
-            21: network.run_ftp_scanning,
-            22: network.run_ssh_scanning,
-            23: network.run_telnet_scanning,
-            25: network.run_smtp_scanning,
-            53: network.run_dns_scanning,
-            3389: network.run_rdp_scanning
-        }.get(port, None)
-
-        if scan_function:
-            scan_function(ip, directory, mode)
-            # delimeter.delimeter()
+    def network_scanning(self,directory):
+        NetworkScan.run_network_scan(self,directory)
+        
+        
 
 
 
+    @staticmethod
+    def run_scanning(domain,db_handler,mode):
+        try:
 
-def run_scanning(domain,mode):
-    try:
+            home_dir = Path.home()
+            os.makedirs(home_dir / domain,exist_ok=True)
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            directory = home_dir / domain / f'nmap_result_for_{domain}_{timestamp}/'
+            os.makedirs(directory,exist_ok=True)
+            ip = ""
+            try:
+                ipaddress.ip_address(domain)
+                ip = domain
+                domain = ''
 
-        home_dir = Path.home()
-        os.makedirs(home_dir / domain,exist_ok=True)
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        directory = home_dir / domain / f'nmap_result_for_{domain}_{timestamp}/'
-        os.makedirs(directory,exist_ok=True)
+            except:
+                ip = socket.gethostbyname(domain)
+            finally:
+                scan_obj = Scanning(domain,ip,db_handler,mode)
+                scan_obj.network_scanning(directory)
 
-    except Exception as e:
-        print(f'Error: {e}')
-    ip = socket.gethostbyname(domain)
-    network_scanning(ip, mode, directory)
+        except Exception as e:
+            print(f'Error: {e}')
 
 if __name__ == "__main__":
     # domain = input("Enter the domain for Scanning: ")
     domain = "192.168.10.4"
-    
-
-    run_scanning(domain,"cli")
+    Scanning.run_scanning(domain,"cli")
     

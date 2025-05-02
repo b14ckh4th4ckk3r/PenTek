@@ -9,7 +9,7 @@ class Recon:
     def __init__(self,domain,ip,db_handler,mode="web"):
         self.domain = domain
         self.ip = ip
-        self.scan_type = "recon"
+        self.scan_type = "Recon"
         self.db_handler = db_handler
         self.mode = mode
 

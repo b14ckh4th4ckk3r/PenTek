@@ -16,8 +16,6 @@ class MongoDBHandler:
         self.uuid = str(uuid.uuid4())[:8]  # Generate short UUID
         self.collection_name = f"Scan_for_{self.domain}_{self.uuid}"
         self.collection = db[self.collection_name]
-        
-        self.store_metadata()
 
     def store_metadata(self):
         """Store scan metadata (Called Once Per Scan)."""
@@ -36,28 +34,27 @@ class MongoDBHandler:
             {"$set": {"status": status}}
         )
 
-    def initialize_function(self,name, scan_type,module):
+    def initialize_function(self, name, scan_type, module, scan_subtype=None):
         """Initialize a function’s status inside the scan collection."""
-        self.collection.insert_one({
+        doc = {
             "name": name,
             "scan_type": scan_type,
-            "module":module,
+            "module": module,
             "status": "running",
             "timestamp": datetime.now(),
             "output": []
-        })
+        }
+        if scan_subtype:
+            doc["scan_subtype"] = scan_subtype
+        self.collection.insert_one(doc)
 
-    # def update_function_status(self, name, status):
-    #     """Update the status of a specific function within the scan."""
-    #     self.collection.update_one(
-    #         {"name": name},
-    #         {"$set": {"status": status}}
-    #     )
-
-    def store_scan_result(self, name, output):
+    def store_scan_result(self, name, output, scan_subtype=None):
         """Store scan results and mark as completed."""
+        query = {"name": name}
+        if scan_subtype:
+            query["scan_subtype"] = scan_subtype
         self.collection.update_one(
-            {"name": name},
+            query,
             {"$set": {
                 "status": "completed",
                 "output": output
@@ -74,4 +71,3 @@ class MongoDBHandler:
     def list_scans():
         """List all stored scans from metadata."""
         return list(metadata_collection.find({}, {"_id": 0}))
-    
