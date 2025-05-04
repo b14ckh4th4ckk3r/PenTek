@@ -188,7 +188,7 @@ export default function Dashboard() {
         value={tabIndex}
         onChange={handleTabChange}
         aria-label="Dashboard Tabs"
-        sx={{ borderRight: 1, borderColor: 'divider', minWidth: 200 }}
+        sx={{ borderRight: 1, borderColor: 'divider', minWidth: 280 }}
       >
         <Tab label="New Scan" />
         <Tab label="All Scans" />

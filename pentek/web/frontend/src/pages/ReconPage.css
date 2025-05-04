@@ -1,23 +1,38 @@
-/* ReconPage.css - Improved styling for Recon page */
+/* ReconPage.css - Enhanced styling for Recon page */
 
 .page-container {
-  padding: 20px;
-  background-color: #f9fafb;
+  padding: 30px;
+  background: linear-gradient(135deg, #f0f4ff, #d9e4ff);
   min-height: 100vh;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #222;
 }
 
 .page-title {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 20px;
-  color: #1890ff;
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 30px;
+  color: #0056d2;
+  text-shadow: 1px 1px 2px rgba(0, 86, 210, 0.5);
 }
 
 .recon-content {
-  background-color: #fff;
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  background-color: #ffffffcc;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 8px 20px rgba(0, 86, 210, 0.15);
+  transition: box-shadow 0.3s ease;
+}
+
+.recon-content:hover {
+  box-shadow: 0 12px 30px rgba(0, 86, 210, 0.3);
+}
+
+button.MuiButton-containedPrimary {
+  background-color: #0056d2;
+  transition: background-color 0.3s ease;
+}
+
+button.MuiButton-containedPrimary:hover {
+  background-color: #003a8c;
 }

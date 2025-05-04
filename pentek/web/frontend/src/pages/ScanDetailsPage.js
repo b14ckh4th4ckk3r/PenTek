@@ -40,7 +40,7 @@ export default function ScanDetailsPage() {
   const [openModules, setOpenModules] = useState({});
   const [selectedModuleIndex, setSelectedModuleIndex] = useState(0);
   const [selectedPortIndex, setSelectedPortIndex] = useState(0);
-  const [outputTabIndices, setOutputTabIndices] = useState({});
+  const [outputSubTabIndices, setOutputSubTabIndices] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export default function ScanDetailsPage() {
         setSelectedScanTypeIndex(0);
         setSelectedModuleIndex(0);
         setSelectedPortIndex(0);
-        setOutputTabIndices({});
+        setOutputSubTabIndices({});
         // Initialize all modules as open for collapsible sidebar
         const initialOpenModules = {};
         scanTypeKeys.forEach((type) => {
@@ -75,13 +75,13 @@ export default function ScanDetailsPage() {
     setSelectedScanTypeIndex(newValue);
     setSelectedModuleIndex(0);
     setSelectedPortIndex(0);
-    setOutputTabIndices({});
+    setOutputSubTabIndices({});
   };
 
   const handleModuleClick = (index) => {
     setSelectedModuleIndex(index);
     setSelectedPortIndex(0);
-    setOutputTabIndices({});
+    setOutputSubTabIndices({});
   };
 
   const toggleModule = (type) => {
@@ -93,13 +93,13 @@ export default function ScanDetailsPage() {
 
   const handlePortTabChange = (event, newValue) => {
     setSelectedPortIndex(newValue);
-    setOutputTabIndices({});
+    setOutputSubTabIndices({});
   };
 
-  const handleOutputTabChange = (toolIndex) => (event, newValue) => {
-    setOutputTabIndices((prev) => ({
+  const handleOutputSubTabChange = (portName) => (event, newValue) => {
+    setOutputSubTabIndices((prev) => ({
       ...prev,
-      [toolIndex]: newValue,
+      [portName]: newValue,
     }));
   };
 
@@ -126,7 +126,21 @@ export default function ScanDetailsPage() {
   });
 
   const portNames = Object.keys(groupedByPort);
-  const selectedPortTools = groupedByPort[portNames[selectedPortIndex]] || [];
+  const selectedPortName = portNames[selectedPortIndex] || '';
+  const selectedPortTools = groupedByPort[selectedPortName] || [];
+
+  // Group selected port tools by scan_subtype
+  const groupedBySubType = {};
+  selectedPortTools.forEach((tool) => {
+    const subType = tool.scan_subtype || 'Output';
+    if (!groupedBySubType[subType]) {
+      groupedBySubType[subType] = [];
+    }
+    groupedBySubType[subType].push(tool);
+  });
+
+  const subTypeNames = Object.keys(groupedBySubType);
+  const selectedSubTabIndex = outputSubTabIndices[selectedPortName] || 0;
 
   return (
     <Box className="page-container">
@@ -186,51 +200,59 @@ export default function ScanDetailsPage() {
         </Box>
 
         <Box className="port-output-container" sx={{ marginTop: 2 }}>
-          {selectedPortTools.length === 0 ? (
+          {subTypeNames.length === 0 ? (
             <Typography>No outputs found.</Typography>
           ) : (
-            selectedPortTools.map((tool, idx) => {
-              const analyzedOutput = tool.output?.analyzed || 'No analyzed output available.';
-              const fullOutput = tool.output?.full || (typeof tool.output === 'string' ? tool.output : 'No full output available.');
-              const outputTabIndex = outputTabIndices[idx] || 0;
-              return (
-                <Box
-                  key={idx}
-                  sx={{
-                    marginBottom: 3,
-                    padding: 2,
-                    border: '1px solid #ccc',
-                    borderRadius: 1,
-                    backgroundColor: '#fafafa',
-                    width: '600px',
-                    maxWidth: '100%',
-                  }}
-                >
-                  <Typography variant="h6" gutterBottom>
-                    {tool.scan_subtype || 'Output'}
-                  </Typography>
-                  <Tabs
-                    value={outputTabIndex}
-                    onChange={handleOutputTabChange(idx)}
-                    aria-label="Output Tabs"
-                    sx={{ marginBottom: 2 }}
-                  >
-                    <Tab label="Analyzed Output" />
-                    <Tab label="Full Output" />
-                  </Tabs>
-                  {outputTabIndex === 0 && (
-                    <Typography variant="body2" component="pre" sx={{ whiteSpace: 'pre-wrap', maxHeight: 300, overflowY: 'auto' }}>
-                      {analyzedOutput}
-                    </Typography>
-                  )}
-                  {outputTabIndex === 1 && (
-                    <Typography variant="body2" component="pre" sx={{ whiteSpace: 'pre-wrap', maxHeight: 300, overflowY: 'auto' }}>
-                      {fullOutput}
-                    </Typography>
-                  )}
-                </Box>
-              );
-            })
+            <>
+              <Tabs
+                value={selectedSubTabIndex}
+                onChange={handleOutputSubTabChange(selectedPortName)}
+                aria-label="Output Sub Tabs"
+                variant="scrollable"
+                scrollButtons="auto"
+                sx={{ marginBottom: 2 }}
+              >
+                {subTypeNames.map((subType, idx) => (
+                  <Tab key={idx} label={subType} />
+                ))}
+              </Tabs>
+              {subTypeNames.map((subType, idx) => {
+                const tools = groupedBySubType[subType];
+                return (
+                  <TabPanel key={idx} value={selectedSubTabIndex} index={idx}>
+                    {tools.map((tool, toolIdx) => {
+                      const fullOutput =
+                        tool.output?.full || (typeof tool.output === 'string' ? tool.output : 'No full output available.');
+                      return (
+                        <Box
+                          key={toolIdx}
+                          sx={{
+                            marginBottom: 3,
+                            padding: 2,
+                            border: '1px solid #ccc',
+                            borderRadius: 1,
+                            backgroundColor: '#fafafa',
+                            width: '600px',
+                            maxWidth: '100%',
+                          }}
+                        >
+                          <Typography variant="h6" gutterBottom>
+                            {tool.name || 'Output'}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            component="pre"
+                            sx={{ whiteSpace: 'pre-wrap', maxHeight: 300, overflowY: 'auto' }}
+                          >
+                            {fullOutput}
+                          </Typography>
+                        </Box>
+                      );
+                    })}
+                  </TabPanel>
+                );
+              })}
+            </>
           )}
         </Box>
       </Box>

@@ -42,24 +42,52 @@ class MongoDBHandler:
             "module": module,
             "status": "running",
             "timestamp": datetime.now(),
-            "output": []
+            "output": ""
         }
         if scan_subtype:
             doc["scan_subtype"] = scan_subtype
         self.collection.insert_one(doc)
 
-    def store_scan_result(self, name, output, scan_subtype=None):
-        """Store scan results and mark as completed."""
+    # def store_scan_result(self, name, full_output, scan_subtype=None):
+    #     """Store scan results as full_output only and mark as completed."""
+    #     query = {"name": name}
+    #     if scan_subtype:
+    #         query["scan_subtype"] = scan_subtype
+    #     output = full_output
+    #     self.collection.update_one(
+    #     query,
+    #     {"$set": {
+    #         "status": "completed",
+    #         "output": {"$concat": ["$output", "\n", full_output]} if "output" in query else full_output
+    #     }}
+    # )
+
+    def store_scan_result(self, name, full_output, scan_subtype=None):
+        """Store or append scan results as full_output and mark as completed."""
         query = {"name": name}
         if scan_subtype:
             query["scan_subtype"] = scan_subtype
+        
+        # Fetch the current document to append the output
+        current_doc = self.collection.find_one(query)
+        
+        if current_doc and "output" in current_doc:
+            # Append the new output to the existing output
+            new_output = current_doc["output"] + "\n" + full_output
+        else:
+            # If no previous output, just store the new output
+            new_output = full_output
+        
+        # Update the document with the new appended output
         self.collection.update_one(
             query,
             {"$set": {
                 "status": "completed",
-                "output": output
+                "output": new_output
             }}
         )
+
+    
 
     @staticmethod
     def delete_scan(collection_name):

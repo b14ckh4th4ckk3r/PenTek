@@ -53,8 +53,20 @@ def get_scan_status():
 
 @api_routes.route('/scan/results', methods=['GET'])
 def get_scan_results():
-    # This endpoint can be improved to fetch results for specific scans
-    return jsonify({"results": []})
+    collection_name = request.args.get('collection')
+    tool_name = request.args.get('tool')
+    if not collection_name or not tool_name:
+        return jsonify({"error": "Missing collection or tool parameter"}), 400
+    try:
+        collection = db[collection_name]
+        doc = collection.find_one({"name": tool_name}, {"_id": 0})
+        if not doc:
+            return jsonify({"results": []})
+        output = doc.get("output", [])
+        # output is expected to be a list [analyze_output, full_output]
+        return jsonify({"results": [{"output": output}]})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @api_routes.route('/scan/list', methods=['GET'])
 def list_scans():
