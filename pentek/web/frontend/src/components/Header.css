@@ -1,0 +1,23 @@
+.header .header-container {
+    width: 100%;
+    padding: 12px 24px;
+    background-color: #1976d2;
+    color: white;
+    display: flex;
+    justify-content: flex-start; /* Aligns children to the left */
+    align-items: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+.header  .header-link {
+    text-decoration: none;
+    color: white;
+    font-weight: 600; /* Slightly better legibility */
+    font-size: 1.2rem; /* More balanced for headers */
+    transition: color 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .header.header-link:hover {
+    color: #bbdefb; /* A lighter shade of the blue on hover */
+  }
+  

@@ -2,8 +2,8 @@ import socket
 from core.recon_core.lookup import LookUp
 from core.recon_core.dns import DNS
 from core.recon_core.osint import OSINT
+import ipaddress
 
-from colorama import Fore,Back,Style
 
 class Recon:
     def __init__(self,domain,ip,db_handler,mode="web"):
@@ -28,7 +28,14 @@ class Recon:
 
     @staticmethod
     def recon_run(domain,db_handler,mode):
-        ip = socket.gethostbyname(domain)
+        ip = ""
+        try:
+            ipaddress.ip_address(domain)
+            ip = domain
+            domain = ''
+
+        except:
+            ip = socket.gethostbyname(domain)
         recon = Recon(domain,ip,db_handler,mode)
         recon.lookup_info()
         recon.dns_info()

@@ -7,6 +7,10 @@ import requests
 import time
 
 class NetworkScan:
+
+    exploits = {}
+
+
     def __init__(self):
         self.module = "NMAP"
 
@@ -86,8 +90,9 @@ class NetworkScan:
         scan_obj.db_handler.store_scan_result(scan_name, raw_output, scan_subtype="Vulnerability Scan")
 
         analysis,exploits_list = self.deep_analysis_parser(raw_output, scan_obj)
-        
+        NetworkScan.exploits[port] = exploits_list
         scan_obj.db_handler.store_scan_result(scan_name, analysis, scan_subtype="Analysis")
+        
         return exploits_list
 
     def get_nse_script(self, port):
@@ -103,68 +108,7 @@ class NetworkScan:
         }
         return nse_scripts.get(str(port), "default")
 
-    
-    # def deep_analysis_parser(self, raw_output, scan_obj):
-    #     ip = scan_obj.domain or scan_obj.ip
-    #     summary = [f"[+] Analysis for {ip}"]
 
-    #     # Parse open ports
-    #     port_pattern = re.compile(r"(\d+)/tcp\s+open\s+(\S+)\s+(.*?)\n")
-    #     ports = []
-    #     for match in port_pattern.finditer(raw_output):
-    #         port, service, version = match.groups()
-    #         ports.append(f"  - Port {port}/tcp: {service} ({version.strip()})")
-
-    #     if ports:
-    #         summary.append("Open Ports:")
-    #         summary.extend(ports)
-
-    #     # CVEs
-    #     cve_pattern = re.compile(r"CVE-\d{4}-\d{4,7}")
-    #     cves = list(set(cve_pattern.findall(raw_output)))
-    #     if cves:
-    #         summary.append("\nVulnerabilities (CVEs):")
-    #         for cve in cves:
-    #             summary.append(f"  - {cve}")
-
-    #     # ExploitDB IDs
-    #     edb_pattern = re.compile(r"EDB-ID[:\s]+(\d+)")
-    #     edb_ids = list(set(edb_pattern.findall(raw_output)))
-    #     exploit_db_refs = {}
-    #     if edb_ids:
-    #         summary.append("\nExploitDB References:")
-    #         for edb in edb_ids:
-    #             summary.append(f"  - EDB-ID: {edb}")
-    #             exploit_db_refs[f"EDB-ID:{edb}"] = edb
-
-    #     # PacketStorm IDs
-    #     packetstorm_pattern = re.compile(r"packetstormsecurity\.com.*?/(\d{4,})")
-    #     ps_ids = list(set(packetstorm_pattern.findall(raw_output)))
-    #     packet_storm_refs = {}
-    #     if ps_ids:
-    #         summary.append("\nPacketStorm References:")
-    #         for ps in ps_ids:
-    #             summary.append(f"  - PacketStorm ID: {ps}")
-    #             packet_storm_refs[f"PacketStorm-ID:{ps}"] = ps
-
-    #     # Heuristic notes
-    #     notes = []
-    #     if "vsftpd 2.3.4" in raw_output:
-    #         notes.append("vsftpd 2.3.4 has a known backdoor vulnerability.")
-    #     if re.search(r"Samba smbd 3\.0\.2[0-5]", raw_output):
-    #         notes.append("Samba 3.0.20 through 3.0.25rc3 may allow remote command execution.")
-    #     if "distccd" in raw_output:
-    #         notes.append("Distccd service may allow remote command execution.")
-    #     if notes:
-    #         summary.append("\nNotes:")
-    #         for note in notes:
-    #             summary.append(f"  - {note}")
-
-    #     # Combine all exploit references into a single dictionary
-    #     exploit_dict = {**exploit_db_refs, **packet_storm_refs}
-
-    #     # Return both the formatted string and the exploit dictionary
-    #     return "\n".join(summary), exploit_dict
 
     def get_cve_details(self, cve_id, delay=1):
         """
@@ -214,6 +158,9 @@ class NetworkScan:
 
     # The deep_analysis_parser function already calls get_cve_details when needed
     def deep_analysis_parser(self, raw_output, scan_obj, include_cve=True, include_exploits=True):
+        if scan_obj.mode =="cli":
+            print("[*] Fetching and Analyzing the Data")
+            print("[*] Might Take Time!")
         ip = scan_obj.domain or scan_obj.ip
         summary = [f"[+] Analysis for {ip}"]
         exploit_db_refs = {}
@@ -306,6 +253,12 @@ class NetworkScan:
             }.get(port, None)
             if scan_function:
                 scan_function(scan_obj, directory)
+        print(NetworkScan.exploits)
+    
+
+    @staticmethod
+    def get_exploits():
+        return NetworkScan.exploits
 
     def ftp_scan(self, scan_obj, directory):
         for result in self.run_intense_scan(scan_obj, 21, directory):

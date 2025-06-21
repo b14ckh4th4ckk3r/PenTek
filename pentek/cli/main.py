@@ -3,6 +3,8 @@ import argparse
 
 from phases.recon import Recon
 from phases.scanning import Scanning
+from phases.exploitaion import Exploitation
+from phases.web import WebExploitation
 from database.mongodb_handler import MongoDBHandler
 
 def initialize_database(domain) -> MongoDBHandler:
@@ -40,6 +42,9 @@ def main():
     else:
         Recon.recon_run(domain, db_handler, args.mode)
         Scanning.run_scanning(domain,db_handler, args.mode)
+        Exploitation.run_exploitation(domain,db_handler,args.mode)
+        WebExploitation.run_all(domain,db_handler,args.mode)
+        
 
     db_handler.update_scan_status("completed")
 

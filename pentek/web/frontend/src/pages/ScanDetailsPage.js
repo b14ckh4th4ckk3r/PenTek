@@ -1,29 +1,26 @@
-import './ScanDetailsPage.css';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
+import { useParams, useLocation } from 'react-router-dom';
 import {
   Box,
-  Tabs,
-  Tab,
-  Typography,
-  CircularProgress,
   List,
   ListItemButton,
   ListItemText,
   Collapse,
+  Tabs,
+  Tab,
+  Typography,
+  CircularProgress,
 } from '@mui/material';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
-import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import './ScanDetailsPage.css';
 
-function TabPanel(props) {
-  const { children, value, index, ...other } = props;
+function TabPanel({ children, value, index }) {
   return (
     <div
       role="tabpanel"
       hidden={value !== index}
-      id={`vertical-tabpanel-${index}`}
-      aria-labelledby={`vertical-tab-${index}`}
-      {...other}
+      aria-labelledby={`tab-${index}`}
       style={{ overflowY: 'auto' }}
     >
       {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
@@ -33,49 +30,108 @@ function TabPanel(props) {
 
 export default function ScanDetailsPage() {
   const { collectionName } = useParams();
+  const location = useLocation();
+  const state = location.state || {};
 
-  const [scanTypes, setScanTypes] = useState([]);
   const [modulesByScanType, setModulesByScanType] = useState({});
+  const [scanTypes, setScanTypes] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Sidebar state
   const [selectedScanTypeIndex, setSelectedScanTypeIndex] = useState(0);
   const [openModules, setOpenModules] = useState({});
   const [selectedModuleIndex, setSelectedModuleIndex] = useState(0);
+
+  // Port-tabs state
   const [selectedPortIndex, setSelectedPortIndex] = useState(0);
   const [outputSubTabIndices, setOutputSubTabIndices] = useState({});
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchScanDetails = async () => {
-      setLoading(true);
-      try {
-        const response = await axios.get(`http://localhost:5000/api/scan/details/${collectionName}`);
-        const data = response.data;
-        const scanTypeKeys = Object.keys(data);
-        setScanTypes(scanTypeKeys);
-        setModulesByScanType(data);
-        setSelectedScanTypeIndex(0);
-        setSelectedModuleIndex(0);
-        setSelectedPortIndex(0);
-        setOutputSubTabIndices({});
-        // Initialize all modules as open for collapsible sidebar
-        const initialOpenModules = {};
-        scanTypeKeys.forEach((type) => {
-          initialOpenModules[type] = true;
-        });
-        setOpenModules(initialOpenModules);
-      } catch (error) {
-        console.error('Failed to fetch scan details', error);
-      } finally {
-        setLoading(false);
-      }
+    const buildFromArray = (items) => {
+      if (!Array.isArray(items)) return false;
+      const byType = {};
+      items.forEach((it) => {
+        byType[it.scan_type] = byType[it.scan_type] || {};
+        byType[it.scan_type][it.module] = byType[it.scan_type][it.module] || [];
+        byType[it.scan_type][it.module].push(it);
+      });
+      setModulesByScanType(byType);
+      const types = Object.keys(byType);
+      setScanTypes(types);
+      const opens = {};
+      types.forEach((t) => (opens[t] = true));
+      setOpenModules(opens);
+      return true;
     };
-    fetchScanDetails();
-  }, [collectionName]);
 
-  const handleScanTypeChange = (event, newValue) => {
-    setSelectedScanTypeIndex(newValue);
+    const buildFromObject = (obj) => {
+      if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+        setModulesByScanType(obj);
+        const types = Object.keys(obj);
+        setScanTypes(types);
+        const opens = {};
+        types.forEach((t) => (opens[t] = true));
+        setOpenModules(opens);
+        return true;
+      }
+      return false;
+    };
+
+    const data = state.items ?? null;
+    if (buildFromArray(data)) {
+      setLoading(false);
+    } else {
+      axios
+        .get(`http://localhost:5000/api/scan/details/${collectionName}`)
+        .then((res) => {
+          const d = res.data;
+          if (!buildFromArray(d)) {
+            buildFromObject(d);
+          }
+        })
+        .catch((err) => console.error('Fetch failed:', err))
+        .finally(() => setLoading(false));
+    }
+  }, [state, collectionName]);
+
+  if (loading) return <CircularProgress sx={{ m: 2 }} />;
+  if (!scanTypes.length) return <Typography sx={{ m: 2 }}>No scan details found.</Typography>;
+
+  const selectedScanType = scanTypes[selectedScanTypeIndex];
+  const modulesForSelectedType = Object.keys(modulesByScanType[selectedScanType] || {});
+  const tools = modulesForSelectedType.length
+    ? modulesByScanType[selectedScanType][modulesForSelectedType[selectedModuleIndex]]
+    : [];
+
+  const byPort = {};
+  tools.forEach((tool) => {
+    const port = tool.name || 'Unknown';
+    byPort[port] = byPort[port] || [];
+    byPort[port].push(tool);
+  });
+  const portNames = Object.keys(byPort);
+
+  const selectedPortName = portNames[selectedPortIndex] || '';
+  const portTools = byPort[selectedPortName] || [];
+
+  const bySub = {};
+  portTools.forEach((t) => {
+    const s = t.scan_subtype || 'Output';
+    bySub[s] = bySub[s] || [];
+    bySub[s].push(t);
+  });
+  const subTypes = Object.keys(bySub);
+  const subIndex = outputSubTabIndices[selectedPortName] || 0;
+
+  const handleScanTypeClick = (index) => {
+    setSelectedScanTypeIndex(index);
     setSelectedModuleIndex(0);
     setSelectedPortIndex(0);
     setOutputSubTabIndices({});
+  };
+
+  const toggleModule = (type) => {
+    setOpenModules((o) => ({ ...o, [type]: !o[type] }));
   };
 
   const handleModuleClick = (index) => {
@@ -84,178 +140,103 @@ export default function ScanDetailsPage() {
     setOutputSubTabIndices({});
   };
 
-  const toggleModule = (type) => {
-    setOpenModules((prev) => ({
-      ...prev,
-      [type]: !prev[type],
-    }));
-  };
-
-  const handlePortTabChange = (event, newValue) => {
-    setSelectedPortIndex(newValue);
+  const handlePortChange = (_, i) => {
+    setSelectedPortIndex(i);
     setOutputSubTabIndices({});
   };
 
-  const handleOutputSubTabChange = (portName) => (event, newValue) => {
-    setOutputSubTabIndices((prev) => ({
-      ...prev,
-      [portName]: newValue,
-    }));
+  const handleSubChange = (port) => (_, i) => {
+    setOutputSubTabIndices((o) => ({ ...o, [port]: i }));
   };
 
-  if (loading) {
-    return <CircularProgress />;
-  }
-
-  if (scanTypes.length === 0) {
-    return <Typography>No scan details found.</Typography>;
-  }
-
-  const selectedScanType = scanTypes[selectedScanTypeIndex];
-  const modules = Object.keys(modulesByScanType[selectedScanType] || {});
-  const ports = modules.length > 0 ? modulesByScanType[selectedScanType][modules[selectedModuleIndex]] : [];
-
-  // Group tools by port name, then group outputs by scan_subtype
-  const groupedByPort = {};
-  ports.forEach((tool) => {
-    const portName = tool.name || 'Unknown Port';
-    if (!groupedByPort[portName]) {
-      groupedByPort[portName] = [];
-    }
-    groupedByPort[portName].push(tool);
-  });
-
-  const portNames = Object.keys(groupedByPort);
-  const selectedPortName = portNames[selectedPortIndex] || '';
-  const selectedPortTools = groupedByPort[selectedPortName] || [];
-
-  // Group selected port tools by scan_subtype
-  const groupedBySubType = {};
-  selectedPortTools.forEach((tool) => {
-    const subType = tool.scan_subtype || 'Output';
-    if (!groupedBySubType[subType]) {
-      groupedBySubType[subType] = [];
-    }
-    groupedBySubType[subType].push(tool);
-  });
-
-  const subTypeNames = Object.keys(groupedBySubType);
-  const selectedSubTabIndex = outputSubTabIndices[selectedPortName] || 0;
-
   return (
+    <div className="scan-details-page">
     <Box className="page-container">
-      {/* Scan Types Vertical Tabs with collapsible modules */}
-      <Tabs
-        orientation="vertical"
-        variant="scrollable"
-        value={selectedScanTypeIndex}
-        onChange={handleScanTypeChange}
-        aria-label="Scan Types"
-        className="scan-types-tabs"
-      >
-        {scanTypes.map((type, index) => {
-          const modulesForType = Object.keys(modulesByScanType[type] || {});
-          return (
-            <div key={type} className="collapsible-tab">
-              <ListItemButton onClick={() => toggleModule(type)} sx={{ pl: 2 }}>
-                <ListItemText primary={type} />
-                {openModules[type] ? <ExpandLess /> : <ExpandMore />}
-              </ListItemButton>
-              <Collapse in={openModules[type]} timeout="auto" unmountOnExit>
-                <List component="div" disablePadding>
-                  {modulesForType.map((module, idx) => (
-                    <ListItemButton
-                      key={module}
-                      selected={selectedScanTypeIndex === index && selectedModuleIndex === idx}
-                      onClick={() => handleModuleClick(idx)}
-                      className={`modules-list-item ${
-                        selectedScanTypeIndex === index && selectedModuleIndex === idx ? 'selected' : ''
-                      }`}
-                      sx={{ pl: 4 }}
-                    >
-                      <ListItemText primary={module} />
-                    </ListItemButton>
-                  ))}
-                </List>
-              </Collapse>
-            </div>
-          );
-        })}
-      </Tabs>
+      <Box className="sidebar">
+        <List disablePadding>
+          {scanTypes.map((type, ti) => {
+            const modulesForType = Object.keys(modulesByScanType[type] || {});
+            return (
+              <Fragment key={type}>
+                <ListItemButton
+                  selected={ti === selectedScanTypeIndex}
+                  onClick={() => handleScanTypeClick(ti)}
+                >
+                  <ListItemText primary={type.toUpperCase()} />
+                  {openModules[type] ? <ExpandLess /> : <ExpandMore />}
+                </ListItemButton>
+                <Collapse in={openModules[type]} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding>
+                    {modulesForType.map((mod, mi) => (
+                      <ListItemButton
+                        key={mod}
+                        selected={ti === selectedScanTypeIndex && mi === selectedModuleIndex}
+                        onClick={() => handleModuleClick(mi)}
+                        sx={{ pl: 4 }}
+                      >
+                        <ListItemText primary={mod} />
+                      </ListItemButton>
+                    ))}
+                  </List>
+                </Collapse>
+              </Fragment>
+            );
+          })}
+        </List>
+      </Box>
 
-      {/* Port Tabs and Outputs stacked vertically */}
-      <Box className="port-tabs-and-output" sx={{ marginLeft: 2, width: '100%' }}>
-        <Box className="port-tabs-container">
-          <Tabs
-            value={selectedPortIndex}
-            onChange={handlePortTabChange}
-            aria-label="Port Tabs"
-            variant="scrollable"
-            scrollButtons="auto"
-          >
-            {portNames.map((portName, idx) => (
-              <Tab key={idx} label={portName} />
-            ))}
-          </Tabs>
-        </Box>
+      <Box className="port-tabs-and-output">
+        <Tabs
+          value={selectedPortIndex}
+          onChange={handlePortChange}
+          variant="scrollable"
+          scrollButtons="auto"
+        >
+          {portNames.map((p) => (
+            <Tab key={p} label={p} />
+          ))}
+        </Tabs>
 
-        <Box className="port-output-container" sx={{ marginTop: 2 }}>
-          {subTypeNames.length === 0 ? (
+        <Box className="port-output-container">
+          {subTypes.length === 0 ? (
             <Typography>No outputs found.</Typography>
           ) : (
             <>
               <Tabs
-                value={selectedSubTabIndex}
-                onChange={handleOutputSubTabChange(selectedPortName)}
-                aria-label="Output Sub Tabs"
+                value={subIndex}
+                onChange={handleSubChange(selectedPortName)}
                 variant="scrollable"
                 scrollButtons="auto"
-                sx={{ marginBottom: 2 }}
+                sx={{ mb: 2 }}
               >
-                {subTypeNames.map((subType, idx) => (
-                  <Tab key={idx} label={subType} />
+                {subTypes.map((s) => (
+                  <Tab key={s} label={s} />
                 ))}
               </Tabs>
-              {subTypeNames.map((subType, idx) => {
-                const tools = groupedBySubType[subType];
-                return (
-                  <TabPanel key={idx} value={selectedSubTabIndex} index={idx}>
-                    {tools.map((tool, toolIdx) => {
-                      const fullOutput =
-                        tool.output?.full || (typeof tool.output === 'string' ? tool.output : 'No full output available.');
-                      return (
-                        <Box
-                          key={toolIdx}
-                          sx={{
-                            marginBottom: 3,
-                            padding: 2,
-                            border: '1px solid #ccc',
-                            borderRadius: 1,
-                            backgroundColor: '#fafafa',
-                            width: '600px',
-                            maxWidth: '100%',
-                          }}
-                        >
-                          <Typography variant="h6" gutterBottom>
-                            {tool.name || 'Output'}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            component="pre"
-                            sx={{ whiteSpace: 'pre-wrap', maxHeight: 300, overflowY: 'auto' }}
-                          >
-                            {fullOutput}
-                          </Typography>
-                        </Box>
-                      );
-                    })}
-                  </TabPanel>
-                );
-              })}
+
+              {subTypes.map((s, si) => (
+                <TabPanel key={s} value={subIndex} index={si}>
+                  {bySub[s].map((tool, idx) => (
+                    <Box
+                      key={idx}
+                      sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 1 }}
+                    >
+                      <Typography variant="h6" gutterBottom>
+                        {tool.name}
+                      </Typography>
+                      <Typography component="pre" sx={{ whiteSpace: 'pre-wrap' }}>
+                        {tool.output?.full ?? tool.output ?? 'No output'}
+                      </Typography>
+                    </Box>
+                  ))}
+                </TabPanel>
+              ))}
             </>
           )}
         </Box>
       </Box>
     </Box>
+    </div>
   );
+  
 }
